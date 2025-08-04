@@ -188,7 +188,8 @@ const App: React.FC = () => {
         }
     };
     fetchRate();
-  }, [showNotification, showOfflineRateModal]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { portfolio, realizedGains } = usePortfolio(transactions, stockPrices, currentUsdTryRate);
 
