@@ -1,0 +1,6 @@
+{
+  "name": "Stock Follow Buddy",
+  "description": "A stock portfolio application to track your investments in TRY. You can import and export your transactions and stock prices, and visualize your portfolio with interactive charts on the main dashboard.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
