@@ -112,7 +112,10 @@ describe('App Component', () => {
     expect(await screen.findByText('Dashboard View')).toBeInTheDocument();
 
     const portfolioButtons = screen.getAllByRole('button', { name: 'Portfolio' });
-    await user.click(portfolioButtons[0]);
+    // In the test environment without CSS, both header and bottom nav buttons are rendered.
+    // The test should target a specific button. We choose the last one found, which
+    // corresponds to the BottomNavBar button, ensuring consistent test behavior.
+    await user.click(portfolioButtons[portfolioButtons.length - 1]);
 
     expect(await screen.findByText('Portfolio View')).toBeInTheDocument();
     expect(screen.queryByText('Dashboard View')).not.toBeInTheDocument();
@@ -125,7 +128,9 @@ describe('App Component', () => {
     expect(await screen.findByText('Dashboard View')).toBeInTheDocument();
 
     const accountingButtons = screen.getAllByRole('button', { name: /Accounting/i });
-    await user.click(accountingButtons[0]);
+    // In the test environment, multiple "Accounting" buttons exist (header, bottom nav).
+    // We click the last one, which corresponds to the BottomNavBar, matching the test's intent.
+    await user.click(accountingButtons[accountingButtons.length - 1]);
 
     expect(await screen.findByText('Accounting View')).toBeInTheDocument();
   });

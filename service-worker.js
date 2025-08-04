@@ -1,10 +1,18 @@
-const CACHE_NAME = 'stock-follow-buddy-v6'; // Bumped version to ensure update
+const CACHE_NAME = 'stock-follow-buddy-v7'; // Bumped version to ensure update
 const APP_SHELL_URL = './index.html';
 const urlsToCache = [
   APP_SHELL_URL,
   './manifest.json',
   './icon-192.svg',
-  './icon-512.svg'
+  './icon-512.svg',
+  '/index.tsx',
+  'https://cdn.tailwindcss.com',
+  'https://unpkg.com/heroicons@2.1.3/24/outline/index.js',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
+  // from importmap - core dependencies
+  "https://esm.sh/react@^19.1.1",
+  "https://esm.sh/react-dom@^19.1.1",
+  "https://esm.sh/recharts@^3.1.0",
 ];
 
 self.addEventListener('install', event => {
@@ -52,13 +60,10 @@ self.addEventListener('fetch', event => {
             cache.put(event.request, networkResponse.clone());
           }
           return networkResponse;
-        }).catch(err => {
-          // The fetch failed, possibly because the user is offline.
-          // In this case, we don't do anything; the initial `response` from cache will be used if available.
-          console.warn(`Fetch for ${event.request.url} failed:`, err);
         });
 
         // Return the cached response immediately if available, otherwise wait for the network.
+        // If offline and not in cache, fetchPromise will reject and the browser will handle the error.
         return response || fetchPromise;
       });
     })

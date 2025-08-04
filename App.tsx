@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Transaction, StockPrices, PriceHistoryItem } from './types';
 import { TransactionType } from './types';
 import { usePortfolio } from './hooks/usePortfolio';
@@ -67,7 +67,7 @@ const validatePrices = (data: any): { isValid: boolean, transformedData: StockPr
 
 
 const App: React.FC = () => {
-  const { showAlert } = useModal();
+  const { showAlert, showConfirm } = useModal();
   const { showNotification } = useNotification();
   const { theme, toggleTheme } = useTheme();
 
@@ -115,6 +115,59 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('currentUsdTryRate', currentUsdTryRate.toString());
   }, [currentUsdTryRate]);
+
+  const showOfflineRateModal = useCallback(() => {
+    let newRate = currentUsdTryRate;
+
+    const RateInputComponent = () => {
+        const [rateInput, setRateInput] = useState(String(currentUsdTryRate));
+
+        const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            const val = e.target.value;
+            setRateInput(val);
+            const parsed = parseFloat(val);
+            if (!isNaN(parsed) && parsed > 0) {
+                newRate = parsed;
+            }
+        };
+
+        return (
+            <div className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                    We couldn't fetch the latest USD/TRY exchange rate, likely due to being offline.
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                    The application will use the last known rate of <strong>{currentUsdTryRate.toFixed(4)}</strong>. If this is incorrect, you can update it manually below.
+                </p>
+                <div>
+                    <label htmlFor="offline-rate-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Manual USD/TRY Rate
+                    </label>
+                    <input
+                        id="offline-rate-input"
+                        type="number"
+                        step="any"
+                        value={rateInput}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-white p-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., 32.5"
+                    />
+                </div>
+            </div>
+        );
+    };
+
+    showConfirm(
+        "Currency Rate Update",
+        <RateInputComponent />,
+        () => { // onConfirm
+            setCurrentUsdTryRate(newRate);
+            showNotification(`Rate manually set to ${newRate.toFixed(4)}.`, 'info');
+        },
+        "Use This Rate",
+        'primary'
+    );
+  }, [currentUsdTryRate, showConfirm, showNotification, setCurrentUsdTryRate]);
   
   // Auto-fetch currency rate on app load
   useEffect(() => {
@@ -131,12 +184,11 @@ const App: React.FC = () => {
             }
         } catch (err) {
             console.error("Failed to auto-fetch currency rate:", err);
-            showNotification('Could not fetch latest currency rate.', 'error');
+            showOfflineRateModal();
         }
     };
     fetchRate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once on mount
+  }, [showNotification, showOfflineRateModal]);
 
   const { portfolio, realizedGains } = usePortfolio(transactions, stockPrices, currentUsdTryRate);
 
