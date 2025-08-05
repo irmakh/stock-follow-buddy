@@ -128,3 +128,7 @@ The service worker uses a **stale-while-revalidate** caching strategy. This mean
 2.  While you are using the cached version, the service worker fetches the latest updates in the background for your next visit.
 
 This makes the app reliable and fast, regardless of network conditions.
+
+### Module Graph
+<img width="1261" height="956" alt="module_graph" src="https://github.com/user-attachments/assets/51a6b444-1a7d-414f-b065-ab495c9708fb" />
+
