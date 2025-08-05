@@ -105,7 +105,7 @@ npm test
 For a more interactive experience, you can run the tests with the Vitest UI, which opens in your browser.
 
 ```bash
-npm test:ui
+npm run test:ui
 ```
 
 ## Key Concepts
