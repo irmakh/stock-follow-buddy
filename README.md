@@ -105,7 +105,7 @@ npm test
 For a more interactive experience, you can run the tests with the Vitest UI, which opens in your browser.
 
 ```bash
-npm test:ui
+npm run test:ui
 ```
 
 ## Key Concepts
@@ -128,3 +128,17 @@ The service worker uses a **stale-while-revalidate** caching strategy. This mean
 2.  While you are using the cached version, the service worker fetches the latest updates in the background for your next visit.
 
 This makes the app reliable and fast, regardless of network conditions.
+
+### Module Graph
+<img width="1261" height="956" alt="module_graph" src="https://github.com/user-attachments/assets/51a6b444-1a7d-414f-b065-ab495c9708fb" />
+
+### Sreenshots
+
+
+|  |  |
+| ------ | ------- | 
+| <img width="911" height="977" alt="Screenshot_20250805_152716" src="https://github.com/user-attachments/assets/c55de6bd-7231-400a-bdcf-55531ec01572" /> | <img width="911" height="977" alt="Screenshot_20250805_152725" src="https://github.com/user-attachments/assets/e85ad92a-a656-48e8-b45a-478d67e0326a" /> |
+| <img width="911" height="977" alt="Screenshot_20250805_152732" src="https://github.com/user-attachments/assets/bda0005c-5bf9-4e1a-a364-6c79bb9186fd" /> | <img width="911" height="977" alt="Screenshot_20250805_152739" src="https://github.com/user-attachments/assets/5d331022-aa28-4717-bcae-4c8adbe1c481" /> |
+| <img width="911" height="977" alt="Screenshot_20250805_152753" src="https://github.com/user-attachments/assets/1af20391-808f-4b8e-8be0-63aad4115bea" /> | <img width="911" height="977" alt="Screenshot_20250805_152802" src="https://github.com/user-attachments/assets/1af4ed64-5899-4495-8416-f136acc08741" /> |
+| <img width="911" height="977" alt="Screenshot_20250805_152811" src="https://github.com/user-attachments/assets/6b031ea3-37af-4955-89b0-927a87e4246f" /> | <img width="911" height="977" alt="Screenshot_20250805_154151" src="https://github.com/user-attachments/assets/629c096d-4612-47c9-abcd-e39829b49106" /> |
+
