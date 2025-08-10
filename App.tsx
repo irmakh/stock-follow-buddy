@@ -32,6 +32,7 @@ const validateTransactions = (data: any[]): { isValid: boolean, transformedData:
         price: parseFloat(t.price),
         date: t.date,
         usdTryRate: t.usdTryRate ? parseFloat(t.usdTryRate) : undefined,
+        commissionRate: t.commissionRate ? parseFloat(t.commissionRate) : undefined,
     }));
 
     const isValid = transformedData.every(t =>
@@ -103,6 +104,11 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('currentUsdTryRate');
     return saved ? parseFloat(saved) : 32.5; // Default rate
   });
+  const [defaultCommissionRate, setDefaultCommissionRate] = useState<number>(() => {
+    const saved = localStorage.getItem('defaultCommissionRate');
+    return saved ? parseFloat(saved) : 0.002; // Default 0.2%
+  });
+
 
   useEffect(() => {
     localStorage.setItem('transactions', JSON.stringify(transactions));
@@ -115,6 +121,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('currentUsdTryRate', currentUsdTryRate.toString());
   }, [currentUsdTryRate]);
+
+  useEffect(() => {
+    localStorage.setItem('defaultCommissionRate', defaultCommissionRate.toString());
+  }, [defaultCommissionRate]);
 
   const showOfflineRateModal = useCallback(() => {
     let newRate = currentUsdTryRate;
@@ -194,7 +204,12 @@ const App: React.FC = () => {
   const { portfolio, realizedGains } = usePortfolio(transactions, stockPrices, currentUsdTryRate);
 
   const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
-    setTransactions(prev => [...prev, { ...transaction, id: new Date().toISOString() + Math.random() }]);
+    const newTransaction = { 
+        ...transaction, 
+        id: new Date().toISOString() + Math.random(),
+        commissionRate: transaction.commissionRate ?? defaultCommissionRate,
+    };
+    setTransactions(prev => [...prev, newTransaction]);
     showNotification(`Transaction for ${transaction.ticker} added successfully!`, 'success');
   };
 
@@ -267,6 +282,7 @@ const App: React.FC = () => {
     setTransactions([]);
     setStockPrices({});
     setCurrentUsdTryRate(32.5);
+    setDefaultCommissionRate(0.002);
     setDisplayCurrency('TRY');
     setActiveView('dashboard');
     // We don't reset theme to allow user preference to persist.
@@ -303,6 +319,7 @@ const App: React.FC = () => {
             addTransaction={addTransaction}
             addStockPrice={addStockPrice}
             currentUsdTryRate={currentUsdTryRate}
+            defaultCommissionRate={defaultCommissionRate}
         />;
       case 'accounting':
         return <AccountingView realizedGains={realizedGains} displayCurrency={displayCurrency} />;
@@ -312,6 +329,8 @@ const App: React.FC = () => {
             setDisplayCurrency={setDisplayCurrency}
             currentUsdTryRate={currentUsdTryRate}
             setCurrentUsdTryRate={setCurrentUsdTryRate}
+            defaultCommissionRate={defaultCommissionRate}
+            setDefaultCommissionRate={setDefaultCommissionRate}
             transactions={transactions}
             stockPrices={stockPrices}
             onTransactionsImport={handleTransactionsImport}

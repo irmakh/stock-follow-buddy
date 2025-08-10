@@ -1,9 +1,9 @@
+/// <reference types="@testing-library/jest-dom/vitest" />
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import AccountingView from '../../components/AccountingView';
 import type { RealizedGainLoss } from '../../types';
 import { formatCurrency } from '../../utils/formatter';
-import '../setup'; // For jest-dom matchers
 
 describe('AccountingView Component', () => {
   it('should display a message when there are no realized gains', () => {
@@ -16,8 +16,8 @@ describe('AccountingView Component', () => {
 
   it('should calculate and display the total realized gain in TRY', () => {
     const mockGains: RealizedGainLoss[] = [
-      { id: '1', ticker: 'G1', quantity: 1, sellDate: '2023-01-01', sellPrice: 100, costBasis: 80, realizedGain: 20 },
-      { id: '2', ticker: 'G2', quantity: 1, sellDate: '2023-01-02', sellPrice: 100, costBasis: 130, realizedGain: -30 },
+      { id: '1', ticker: 'G1', quantity: 1, sellDate: '2023-01-01', sellPrice: 100, costBasis: 80, realizedGain: 20, netSellProceeds: 100 },
+      { id: '2', ticker: 'G2', quantity: 1, sellDate: '2023-01-02', sellPrice: 100, costBasis: 130, realizedGain: -30, netSellProceeds: 100 },
     ];
     render(<AccountingView realizedGains={mockGains} displayCurrency="TRY" />);
 
@@ -29,8 +29,8 @@ describe('AccountingView Component', () => {
 
   it('should calculate and display the total realized gain in USD', () => {
     const mockGains: RealizedGainLoss[] = [
-      { id: '1', ticker: 'G1', quantity: 1, sellDate: '2023-01-01', sellPrice: 100, costBasis: 80, realizedGain: 20, realizedGainUsd: 5 },
-      { id: '2', ticker: 'G2', quantity: 1, sellDate: '2023-01-02', sellPrice: 100, costBasis: 130, realizedGain: -30, realizedGainUsd: -10 },
+      { id: '1', ticker: 'G1', quantity: 1, sellDate: '2023-01-01', sellPrice: 100, costBasis: 80, realizedGain: 20, netSellProceeds: 100, costBasisUsd: 10, netSellProceedsUsd: 15, realizedGainUsd: 5 },
+      { id: '2', ticker: 'G2', quantity: 1, sellDate: '2023-01-02', sellPrice: 100, costBasis: 130, realizedGain: -30, netSellProceeds: 100, costBasisUsd: 25, netSellProceedsUsd: 15, realizedGainUsd: -10 },
     ];
     render(<AccountingView realizedGains={mockGains} displayCurrency="USD" />);
 
@@ -42,9 +42,9 @@ describe('AccountingView Component', () => {
   
   it('should correctly sum total USD gain ignoring entries where it is undefined', () => {
     const mockGains: RealizedGainLoss[] = [
-      { id: '1', ticker: 'G1', quantity: 1, sellDate: '2023-01-01', sellPrice: 100, costBasis: 80, realizedGain: 20, realizedGainUsd: 5 },
-      { id: '2', ticker: 'G2', quantity: 1, sellDate: '2023-01-02', sellPrice: 100, costBasis: 130, realizedGain: -30, realizedGainUsd: undefined }, // No USD gain
-      { id: '3', ticker: 'G3', quantity: 1, sellDate: '2023-01-03', sellPrice: 150, costBasis: 100, realizedGain: 50, realizedGainUsd: 15 },
+      { id: '1', ticker: 'G1', quantity: 1, sellDate: '2023-01-01', sellPrice: 100, costBasis: 80, realizedGain: 20, netSellProceeds: 100, costBasisUsd: 10, netSellProceedsUsd: 15, realizedGainUsd: 5 },
+      { id: '2', ticker: 'G2', quantity: 1, sellDate: '2023-01-02', sellPrice: 100, costBasis: 130, realizedGain: -30, netSellProceeds: 100, costBasisUsd: undefined, netSellProceedsUsd: undefined, realizedGainUsd: undefined }, // No USD gain
+      { id: '3', ticker: 'G3', quantity: 1, sellDate: '2023-01-03', sellPrice: 150, costBasis: 100, realizedGain: 50, netSellProceeds: 150, costBasisUsd: 10, netSellProceedsUsd: 25, realizedGainUsd: 15 },
     ];
     render(<AccountingView realizedGains={mockGains} displayCurrency="USD" />);
     
@@ -56,8 +56,8 @@ describe('AccountingView Component', () => {
 
   it('should display individual gain/loss rows with correct data and styling cues', () => {
     const mockGains: RealizedGainLoss[] = [
-      { id: 'gain', ticker: 'GAIN', quantity: 10, sellDate: '2023-01-01', sellPrice: 12, costBasis: 100, realizedGain: 20, realizedGainUsd: 1 },
-      { id: 'loss', ticker: 'LOSS', quantity: 5, sellDate: '2023-01-02', sellPrice: 15, costBasis: 100, realizedGain: -25, realizedGainUsd: -2 },
+      { id: 'gain', ticker: 'GAIN', quantity: 10, sellDate: '2023-01-01', sellPrice: 12, costBasis: 100, realizedGain: 20, netSellProceeds: 120, costBasisUsd: 4, netSellProceedsUsd: 5, realizedGainUsd: 1 },
+      { id: 'loss', ticker: 'LOSS', quantity: 5, sellDate: '2023-01-02', sellPrice: 15, costBasis: 100, realizedGain: -25, netSellProceeds: 75, costBasisUsd: 5, netSellProceedsUsd: 3, realizedGainUsd: -2 },
     ];
     render(<AccountingView realizedGains={mockGains} displayCurrency="TRY" />);
     

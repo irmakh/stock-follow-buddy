@@ -11,6 +11,7 @@ export interface Transaction {
   price: number; // Price in TRY
   date: string; // ISO 8601 format
   usdTryRate?: number; // USD/TRY exchange rate at transaction time
+  commissionRate?: number; // e.g., 0.002 for 0.2%
 }
 
 export interface PriceHistoryItem {
@@ -64,10 +65,11 @@ export interface RealizedGainLoss {
     sellPrice: number;
     costBasis: number;
     realizedGain: number;
+    netSellProceeds: number;
 
     // USD values
     costBasisUsd?: number;
-    sellProceedsUsd?: number;
+    netSellProceedsUsd?: number;
     realizedGainUsd?: number;
 }
 

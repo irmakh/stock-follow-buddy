@@ -14,7 +14,7 @@ const getLatestPrice = (ticker: string, prices: StockPrices): number | undefined
 export const usePortfolio = (transactions: Transaction[], prices: StockPrices, currentUsdTryRate: number): { portfolio: Portfolio, realizedGains: RealizedGainLoss[] } => {
   const result = useMemo(() => {
     const realizedGains: RealizedGainLoss[] = [];
-    const buyLots = new Map<string, { quantity: number; price: number; date: string; usdTryRate?: number }[]>();
+    const buyLots = new Map<string, { quantity: number; price: number; date: string; usdTryRate?: number; commissionRate?: number }[]>();
 
     // Sort transactions by date to process them chronologically for FIFO
     const sortedTransactions = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -22,7 +22,7 @@ export const usePortfolio = (transactions: Transaction[], prices: StockPrices, c
     sortedTransactions.forEach(t => {
       const lots = buyLots.get(t.ticker) || [];
       if (t.type === TransactionType.Buy) {
-        lots.push({ quantity: t.quantity, price: t.price, date: t.date, usdTryRate: t.usdTryRate });
+        lots.push({ quantity: t.quantity, price: t.price, date: t.date, usdTryRate: t.usdTryRate, commissionRate: t.commissionRate });
         buyLots.set(t.ticker, lots);
       } else { // Sell transaction (FIFO logic)
         // Don't process sell transactions with zero quantity
@@ -43,10 +43,12 @@ export const usePortfolio = (transactions: Transaction[], prices: StockPrices, c
         while (quantityToSell > 0 && lots.length > 0) {
           const firstLot = lots[0];
           const sellableFromLot = Math.min(quantityToSell, firstLot.quantity);
+          
+          const costOfLotPortion = (sellableFromLot * firstLot.price) * (1 + (firstLot.commissionRate || 0));
+          totalCostOfSoldShares += costOfLotPortion;
 
-          totalCostOfSoldShares += sellableFromLot * firstLot.price;
           if (firstLot.usdTryRate) {
-            totalCostOfSoldSharesUsd += (sellableFromLot * firstLot.price) / firstLot.usdTryRate;
+            totalCostOfSoldSharesUsd += costOfLotPortion / firstLot.usdTryRate;
           } else {
             isUsdCostBasisIncomplete = true;
           }
@@ -59,13 +61,14 @@ export const usePortfolio = (transactions: Transaction[], prices: StockPrices, c
           }
         }
         
-        const proceeds = t.quantity * t.price;
-        const realizedGain = proceeds - totalCostOfSoldShares;
+        const grossProceeds = t.quantity * t.price;
+        const netProceeds = grossProceeds * (1 - (t.commissionRate || 0));
+        const realizedGain = netProceeds - totalCostOfSoldShares;
         
-        const sellProceedsUsd = t.usdTryRate ? proceeds / t.usdTryRate : undefined;
+        const netProceedsUsd = t.usdTryRate ? netProceeds / t.usdTryRate : undefined;
         
         // A valid USD P/L requires the sell rate AND a complete buy rate history for the shares sold.
-        const canCalculateUsdGain = sellProceedsUsd !== undefined && !isUsdCostBasisIncomplete;
+        const canCalculateUsdGain = netProceedsUsd !== undefined && !isUsdCostBasisIncomplete;
 
         realizedGains.push({
             id: t.id,
@@ -75,10 +78,11 @@ export const usePortfolio = (transactions: Transaction[], prices: StockPrices, c
             sellPrice: t.price,
             costBasis: totalCostOfSoldShares,
             realizedGain: realizedGain,
+            netSellProceeds: netProceeds,
             // USD values are conditional
             costBasisUsd: canCalculateUsdGain ? totalCostOfSoldSharesUsd : undefined,
-            sellProceedsUsd: canCalculateUsdGain ? sellProceedsUsd : undefined,
-            realizedGainUsd: canCalculateUsdGain ? sellProceedsUsd! - totalCostOfSoldSharesUsd : undefined
+            netSellProceedsUsd: canCalculateUsdGain ? netProceedsUsd : undefined,
+            realizedGainUsd: canCalculateUsdGain ? netProceedsUsd! - totalCostOfSoldSharesUsd : undefined
         });
       }
     });
@@ -87,10 +91,11 @@ export const usePortfolio = (transactions: Transaction[], prices: StockPrices, c
     for (const [ticker, lots] of buyLots.entries()) {
       const { totalQuantity, totalCost, totalCostUsd } = lots.reduce(
         (acc, lot) => {
+          const lotCost = lot.quantity * lot.price * (1 + (lot.commissionRate || 0));
           acc.totalQuantity += lot.quantity;
-          acc.totalCost += lot.quantity * lot.price;
+          acc.totalCost += lotCost;
           if (lot.usdTryRate) {
-            acc.totalCostUsd += (lot.quantity * lot.price) / lot.usdTryRate;
+            acc.totalCostUsd += lotCost / lot.usdTryRate;
           }
           return acc;
         },

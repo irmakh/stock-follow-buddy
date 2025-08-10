@@ -29,8 +29,8 @@ const RealizedGainCard: React.FC<{ gain: RealizedGainLoss; displayCurrency: Disp
             </div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm border-t border-gray-200 dark:border-gray-700 pt-4">
                  <div>
-                    <div className="text-gray-500 dark:text-gray-400">Proceeds</div>
-                    <div className="text-gray-800 dark:text-white font-medium">{isUsd ? (g.sellProceedsUsd !== undefined ? formatCurrency(g.sellProceedsUsd, 'auto', 'USD') : 'N/A') : formatCurrency(g.sellPrice * g.quantity, 'auto', 'TRY')}</div>
+                    <div className="text-gray-500 dark:text-gray-400">Net Proceeds</div>
+                    <div className="text-gray-800 dark:text-white font-medium">{isUsd ? (g.netSellProceedsUsd !== undefined ? formatCurrency(g.netSellProceedsUsd, 'auto', 'USD') : 'N/A') : formatCurrency(g.netSellProceeds, 'auto', 'TRY')}</div>
                 </div>
                 <div>
                     <div className="text-gray-500 dark:text-gray-400">Cost Basis</div>
@@ -61,8 +61,8 @@ const AccountingView: React.FC<AccountingViewProps> = ({ realizedGains, displayC
   const sortedGains = [...realizedGains].sort((a, b) => new Date(b.sellDate).getTime() - new Date(a.sellDate).getTime());
 
   const headers = isUsd
-    ? ['Sell Date', 'Ticker', 'Quantity', 'Total Proceeds', 'Cost Basis', 'Realized P/L']
-    : ['Sell Date', 'Ticker', 'Quantity', 'Sell Price', 'Total Proceeds', 'Cost Basis', 'Realized P/L'];
+    ? ['Sell Date', 'Ticker', 'Quantity', 'Net Proceeds', 'Cost Basis', 'Realized P/L']
+    : ['Sell Date', 'Ticker', 'Quantity', 'Sell Price', 'Net Proceeds', 'Cost Basis', 'Realized P/L'];
 
   return (
     <div className="space-y-6">
@@ -115,8 +115,8 @@ const AccountingView: React.FC<AccountingViewProps> = ({ realizedGains, displayC
                   
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {isUsd 
-                      ? (g.sellProceedsUsd !== undefined ? formatCurrency(g.sellProceedsUsd, 'auto', 'USD') : 'N/A') 
-                      : formatCurrency(g.sellPrice * g.quantity, 'auto', 'TRY')}
+                      ? (g.netSellProceedsUsd !== undefined ? formatCurrency(g.netSellProceedsUsd, 'auto', 'USD') : 'N/A') 
+                      : formatCurrency(g.netSellProceeds, 'auto', 'TRY')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {isUsd 

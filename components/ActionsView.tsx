@@ -12,13 +12,15 @@ interface ActionsViewProps {
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   addStockPrice: (ticker: string, price: number, date: string) => void;
   currentUsdTryRate: number;
+  defaultCommissionRate: number;
 }
 
 const AddTransactionForm: React.FC<{
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   knownTickers: string[];
   currentUsdTryRate: number;
-}> = ({ addTransaction, knownTickers, currentUsdTryRate }) => {
+  defaultCommissionRate: number;
+}> = ({ addTransaction, knownTickers, currentUsdTryRate, defaultCommissionRate }) => {
   const { showAlert } = useModal();
   const [ticker, setTicker] = useState('');
   const [type, setType] = useState<TransactionType>(TransactionType.Buy);
@@ -26,6 +28,7 @@ const AddTransactionForm: React.FC<{
   const [price, setPrice] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [usdTryRate, setUsdTryRate] = useState('');
+  const [commissionRate, setCommissionRate] = useState('');
   
   const commonInputStyle = "mt-1 block w-full bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-white p-2 focus:ring-blue-500 focus:border-blue-500";
   const labelStyle = "block text-sm font-medium text-gray-700 dark:text-gray-300";
@@ -36,6 +39,10 @@ const AddTransactionForm: React.FC<{
       showAlert('Invalid Input', 'Please fill all required fields.');
       return;
     }
+    
+    const parsedCommission = parseFloat(commissionRate);
+    const finalCommissionRate = !isNaN(parsedCommission) ? parsedCommission / 100 : undefined;
+
     addTransaction({
       ticker: ticker.toUpperCase(),
       type,
@@ -43,18 +50,21 @@ const AddTransactionForm: React.FC<{
       price: parseFloat(price),
       date,
       usdTryRate: usdTryRate ? parseFloat(usdTryRate) : currentUsdTryRate,
+      commissionRate: finalCommissionRate,
     });
+
     setTicker('');
     setQuantity('');
     setPrice('');
     setUsdTryRate('');
+    setCommissionRate('');
   };
 
   return (
     <Card>
       <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Add Transaction</h3>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="md:col-span-2 lg:col-span-1">
+        <div className="lg:col-span-1">
           <TickerSelect id="transaction-ticker" value={ticker} onChange={setTicker} knownTickers={knownTickers} />
         </div>
         <div>
@@ -78,7 +88,11 @@ const AddTransactionForm: React.FC<{
         </div>
         <div>
           <label htmlFor="usdTryRate" className={labelStyle}>USD/TRY Rate (Optional)</label>
-          <input type="number" step="any" id="usdTryRate" placeholder={`Current: ${currentUsdTryRate}`} value={usdTryRate} onChange={e => setUsdTryRate(e.target.value)} className={commonInputStyle} />
+          <input type="number" step="any" id="usdTryRate" placeholder={`Current: ${currentUsdTryRate.toFixed(4)}`} value={usdTryRate} onChange={e => setUsdTryRate(e.target.value)} className={commonInputStyle} />
+        </div>
+         <div className="lg:col-span-1">
+          <label htmlFor="commissionRate" className={labelStyle}>Commission Rate (%)</label>
+          <input type="number" step="any" id="commissionRate" placeholder={`Default: ${defaultCommissionRate * 100}`} value={commissionRate} onChange={e => setCommissionRate(e.target.value)} className={commonInputStyle} />
         </div>
         <div className="md:col-span-2 lg:col-span-3">
           <Button type="submit" className="w-full mt-2">Add Transaction</Button>
@@ -137,12 +151,12 @@ const UpdatePricesForm: React.FC<{
   );
 }
 
-const ActionsView: React.FC<ActionsViewProps> = ({ transactions, stockPrices, addTransaction, addStockPrice, currentUsdTryRate }) => {
+const ActionsView: React.FC<ActionsViewProps> = ({ transactions, stockPrices, addTransaction, addStockPrice, currentUsdTryRate, defaultCommissionRate }) => {
   const knownTickers = Array.from(new Set(transactions.map(t => t.ticker).concat(Object.keys(stockPrices)))).sort();
 
   return (
     <div className="space-y-6">
-      <AddTransactionForm addTransaction={addTransaction} knownTickers={knownTickers} currentUsdTryRate={currentUsdTryRate} />
+      <AddTransactionForm addTransaction={addTransaction} knownTickers={knownTickers} currentUsdTryRate={currentUsdTryRate} defaultCommissionRate={defaultCommissionRate} />
       <UpdatePricesForm addStockPrice={addStockPrice} knownTickers={knownTickers} />
     </div>
   );

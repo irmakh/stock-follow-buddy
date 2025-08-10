@@ -79,7 +79,7 @@ describe('usePortfolio hook', () => {
     const costOfSoldSharesUsd = (10 * 200 / 30) + (2 * 210 / 31);
     const proceedsUsd = (12 * 250 / 32);
     expect(gain.costBasisUsd).toBeCloseTo(costOfSoldSharesUsd);
-    expect(gain.sellProceedsUsd).toBeCloseTo(proceedsUsd);
+    expect(gain.netSellProceedsUsd).toBeCloseTo(proceedsUsd);
     expect(gain.realizedGainUsd).toBeCloseTo(proceedsUsd - costOfSoldSharesUsd);
   });
   
@@ -96,7 +96,7 @@ describe('usePortfolio hook', () => {
     const gain = result.current.realizedGains[0];
     expect(gain.realizedGainUsd).toBeUndefined();
     expect(gain.costBasisUsd).toBeUndefined();
-    expect(gain.sellProceedsUsd).toBeUndefined();
+    expect(gain.netSellProceedsUsd).toBeUndefined();
   });
 
   it('should remove a holding when its quantity becomes zero', () => {
@@ -203,7 +203,7 @@ describe('usePortfolio hook', () => {
     expect(gain.realizedGain).toBe(500); // (10 * 250) - (10 * 200)
     expect(gain.realizedGainUsd).toBeUndefined();
     expect(gain.costBasisUsd).toBeUndefined();
-    expect(gain.sellProceedsUsd).toBeUndefined();
+    expect(gain.netSellProceedsUsd).toBeUndefined();
   });
   
   it('should handle floating point quantities correctly', () => {

@@ -1,9 +1,9 @@
+/// <reference types="@testing-library/jest-dom/vitest" />
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import Dashboard from '../../components/Dashboard';
 import type { Portfolio, StockPrices } from '../../types';
 import { formatCurrency } from '../../utils/formatter';
-import '../setup.ts';
 
 // Mock chart components as they are complex and not the focus of this test
 vi.mock('../../components/charts/PortfolioPieChart', () => ({ default: () => <div>PortfolioPieChart</div> }));

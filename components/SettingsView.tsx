@@ -13,6 +13,8 @@ interface SettingsViewProps {
     setDisplayCurrency: (currency: DisplayCurrency) => void;
     currentUsdTryRate: number;
     setCurrentUsdTryRate: (rate: number) => void;
+    defaultCommissionRate: number;
+    setDefaultCommissionRate: (rate: number) => void;
     transactions: Transaction[];
     stockPrices: StockPrices;
     onTransactionsImport: (data: Transaction[]) => void;
@@ -131,9 +133,43 @@ const RateEditor: React.FC<{
     );
 };
 
+const CommissionEditor: React.FC<{
+    currentRate: number;
+    setCurrentRate: (rate: number) => void;
+}> = ({ currentRate, setCurrentRate }) => {
+    // Handle potential floating point inaccuracies for display
+    const displayValue = Number((currentRate * 100).toPrecision(15));
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const inputVal = e.target.value;
+        const parsed = parseFloat(inputVal);
+        // Store as decimal, e.g., 0.002 for 0.2%
+        setCurrentRate(isNaN(parsed) ? 0 : parsed / 100);
+    };
+
+    return (
+        <div className="space-y-2">
+            <label htmlFor="commission-rate" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Default Commission Rate (%)
+            </label>
+            <div className="flex items-center bg-gray-200 dark:bg-gray-700 rounded-md shadow-sm">
+                <input
+                    type="number"
+                    id="commission-rate"
+                    value={displayValue}
+                    onChange={handleChange}
+                    className="w-full bg-transparent border-none rounded-md text-gray-900 dark:text-white py-2 px-3 text-sm focus:ring-0"
+                    step="any"
+                    aria-label="Default commission rate in percent"
+                />
+            </div>
+        </div>
+    );
+};
+
 
 const SettingsView: React.FC<SettingsViewProps> = (props) => {
-    const { displayCurrency, setDisplayCurrency, currentUsdTryRate, setCurrentUsdTryRate, theme, toggleTheme, ...importExportProps } = props;
+    const { displayCurrency, setDisplayCurrency, currentUsdTryRate, setCurrentUsdTryRate, theme, toggleTheme, defaultCommissionRate, setDefaultCommissionRate, ...importExportProps } = props;
 
     return (
         <div className="space-y-6">
@@ -148,6 +184,7 @@ const SettingsView: React.FC<SettingsViewProps> = (props) => {
                         <CurrencySwitcher displayCurrency={displayCurrency} setDisplayCurrency={setDisplayCurrency} />
                     </div>
                     <RateEditor currentRate={currentUsdTryRate} setCurrentRate={setCurrentUsdTryRate} />
+                    <CommissionEditor currentRate={defaultCommissionRate} setCurrentRate={setDefaultCommissionRate} />
                 </div>
             </Card>
 

@@ -60,7 +60,7 @@ const arrayToCsv = (data: Record<string, any>[]): string => {
   data.forEach(row => Object.keys(row).forEach(key => headersSet.add(key)));
   
   // A consistent header order is better for readability and testing.
-  const preferredOrder = ['id', 'ticker', 'type', 'quantity', 'price', 'date', 'usdTryRate'];
+  const preferredOrder = ['id', 'ticker', 'type', 'quantity', 'price', 'date', 'usdTryRate', 'commissionRate'];
   const headers = Array.from(headersSet).sort((a, b) => {
       const indexA = preferredOrder.indexOf(a);
       const indexB = preferredOrder.indexOf(b);
@@ -144,7 +144,7 @@ const csvToTransactions = (csv: string): Partial<Transaction>[] => {
     const transaction: { [key: string]: any } = {};
     headers.forEach((header, index) => {
       let value: any = values[index];
-      if (header === 'quantity' || header === 'price' || header === 'usdTryRate') {
+      if (header === 'quantity' || header === 'price' || header === 'usdTryRate' || header === 'commissionRate') {
         value = value ? parseFloat(value) : undefined;
       } else if (header === 'type' && value) {
         const upperValue = value.toUpperCase();

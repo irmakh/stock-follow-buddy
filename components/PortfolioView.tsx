@@ -105,6 +105,7 @@ const HoldingsTable: React.FC<{ holdings: Portfolio['holdings'], displayCurrency
 
 const TransactionsTable: React.FC<{ transactions: Transaction[] }> = ({ transactions }) => {
     const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const headers = ['Date', 'Ticker', 'Type', 'Quantity', 'Price (TRY)', 'Commission (TRY)', 'Net Value (TRY)', 'USD/TRY Rate'];
     return (
         <Card>
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Transaction History</h3>
@@ -112,26 +113,32 @@ const TransactionsTable: React.FC<{ transactions: Transaction[] }> = ({ transact
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
                         <tr>
-                            {['Date', 'Ticker', 'Type', 'Quantity', 'Price (TRY)', 'USD/TRY Rate', 'Total Value (TRY)'].map(h => 
+                            {headers.map(h => 
                                 <th key={h} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{h}</th>)}
                         </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                         {sortedTransactions.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-10 text-gray-500 dark:text-gray-400">No transactions recorded yet.</td>
+                                <td colSpan={headers.length} className="text-center py-10 text-gray-500 dark:text-gray-400">No transactions recorded yet.</td>
                             </tr>
-                        ) : sortedTransactions.map(t => (
-                            <tr key={t.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.date}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{t.ticker}</td>
-                                <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${t.type === TransactionType.Buy ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>{t.type}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.quantity}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatCurrency(t.price, 'auto', 'TRY')}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.usdTryRate ? t.usdTryRate.toFixed(4) : 'N/A'}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatCurrency(t.price * t.quantity, 'auto', 'TRY')}</td>
-                            </tr>
-                        ))}
+                        ) : sortedTransactions.map(t => {
+                            const grossValue = t.price * t.quantity;
+                            const commission = grossValue * (t.commissionRate ?? 0);
+                            const netValue = t.type === TransactionType.Buy ? grossValue + commission : grossValue - commission;
+                            return (
+                                <tr key={t.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.date}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{t.ticker}</td>
+                                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${t.type === TransactionType.Buy ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>{t.type}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.quantity}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatCurrency(t.price, 'auto', 'TRY')}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatCurrency(commission, 'auto', 'TRY')}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatCurrency(netValue, 'auto', 'TRY')}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.usdTryRate ? t.usdTryRate.toFixed(4) : 'N/A'}</td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
