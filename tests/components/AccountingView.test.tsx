@@ -1,4 +1,3 @@
-/// <reference types="@testing-library/jest-dom/vitest" />
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import AccountingView from '../../components/AccountingView';
@@ -21,7 +20,7 @@ describe('AccountingView Component', () => {
     ];
     render(<AccountingView realizedGains={mockGains} displayCurrency="TRY" />);
 
-    const totalGainElement = screen.getByText(/Total Realized Gain\/Loss/i);
+    const totalGainElement = screen.getByText(/Total Realized Gain\/Loss/i, { selector: 'p' });
     // Total gain is 20 + (-30) = -10
     const expectedTotal = formatCurrency(-10, 'exceptZero', 'TRY');
     expect(totalGainElement).toHaveTextContent(expectedTotal);
@@ -34,7 +33,7 @@ describe('AccountingView Component', () => {
     ];
     render(<AccountingView realizedGains={mockGains} displayCurrency="USD" />);
 
-    const totalGainElement = screen.getByText(/Total Realized Gain\/Loss/i);
+    const totalGainElement = screen.getByText(/Total Realized Gain\/Loss/i, { selector: 'p' });
     // Total gain is 5 + (-10) = -5
     const expectedTotal = formatCurrency(-5, 'exceptZero', 'USD');
     expect(totalGainElement).toHaveTextContent(expectedTotal);
@@ -48,7 +47,7 @@ describe('AccountingView Component', () => {
     ];
     render(<AccountingView realizedGains={mockGains} displayCurrency="USD" />);
     
-    const totalGainElement = screen.getByText(/Total Realized Gain\/Loss/i);
+    const totalGainElement = screen.getByText(/Total Realized Gain\/Loss/i, { selector: 'p' });
     // Total should be 5 + 15 = 20
     const expectedTotal = formatCurrency(20, 'exceptZero', 'USD');
     expect(totalGainElement).toHaveTextContent(expectedTotal);

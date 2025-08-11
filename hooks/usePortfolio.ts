@@ -44,7 +44,7 @@ export const usePortfolio = (transactions: Transaction[], prices: StockPrices, c
           const firstLot = lots[0];
           const sellableFromLot = Math.min(quantityToSell, firstLot.quantity);
           
-          const costOfLotPortion = (sellableFromLot * firstLot.price) * (1 + (firstLot.commissionRate || 0));
+          const costOfLotPortion = sellableFromLot * firstLot.price;
           totalCostOfSoldShares += costOfLotPortion;
 
           if (firstLot.usdTryRate) {
@@ -91,7 +91,7 @@ export const usePortfolio = (transactions: Transaction[], prices: StockPrices, c
     for (const [ticker, lots] of buyLots.entries()) {
       const { totalQuantity, totalCost, totalCostUsd } = lots.reduce(
         (acc, lot) => {
-          const lotCost = lot.quantity * lot.price * (1 + (lot.commissionRate || 0));
+          const lotCost = lot.quantity * lot.price;
           acc.totalQuantity += lot.quantity;
           acc.totalCost += lotCost;
           if (lot.usdTryRate) {

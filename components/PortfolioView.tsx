@@ -124,8 +124,8 @@ const TransactionsTable: React.FC<{ transactions: Transaction[] }> = ({ transact
                             </tr>
                         ) : sortedTransactions.map(t => {
                             const grossValue = t.price * t.quantity;
-                            const commission = grossValue * (t.commissionRate ?? 0);
-                            const netValue = t.type === TransactionType.Buy ? grossValue + commission : grossValue - commission;
+                            const commission = t.type === TransactionType.Sell ? grossValue * (t.commissionRate ?? 0) : 0;
+                            const netValue = t.type === TransactionType.Buy ? grossValue : grossValue - commission;
                             return (
                                 <tr key={t.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.date}</td>
