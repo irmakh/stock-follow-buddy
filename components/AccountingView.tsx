@@ -2,6 +2,9 @@ import React from 'react';
 import type { RealizedGainLoss } from '../types';
 import Card from './ui/Card';
 import { formatCurrency } from '../utils/formatter';
+import { usePagination } from '../hooks/usePagination';
+import PaginationControls from './ui/PaginationControls';
+import { useSort } from '../hooks/useSort';
 
 type DisplayCurrency = 'TRY' | 'USD';
 
@@ -58,11 +61,38 @@ const AccountingView: React.FC<AccountingViewProps> = ({ realizedGains, displayC
   const totalRealizedGain = realizedGains.reduce((sum, gain) => sum + (isUsd ? gain.realizedGainUsd || 0 : gain.realizedGain), 0);
   const gainLossColor = totalRealizedGain >= 0 ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400';
   
-  const sortedGains = [...realizedGains].sort((a, b) => new Date(b.sellDate).getTime() - new Date(a.sellDate).getTime());
+  const { sortedItems, requestSort, getSortIndicator } = useSort<RealizedGainLoss>(realizedGains, { key: 'sellDate', direction: 'descending' });
 
-  const headers = isUsd
-    ? ['Sell Date', 'Ticker', 'Quantity', 'Net Proceeds', 'Cost Basis', 'Realized P/L']
-    : ['Sell Date', 'Ticker', 'Quantity', 'Sell Price', 'Net Proceeds', 'Cost Basis', 'Realized P/L'];
+  const {
+      currentData,
+      currentPage,
+      totalPages,
+      itemsPerPage,
+      setItemsPerPage,
+      nextPage,
+      prevPage,
+      canNextPage,
+      canPrevPage
+  } = usePagination(sortedItems, 10);
+  
+  const headers: { label: string; key: keyof RealizedGainLoss }[] = isUsd
+    ? [
+        { label: 'Sell Date', key: 'sellDate' },
+        { label: 'Ticker', key: 'ticker' },
+        { label: 'Quantity', key: 'quantity' },
+        { label: 'Net Proceeds', key: 'netSellProceedsUsd' },
+        { label: 'Cost Basis', key: 'costBasisUsd' },
+        { label: 'Realized P/L', key: 'realizedGainUsd' }
+      ]
+    : [
+        { label: 'Sell Date', key: 'sellDate' },
+        { label: 'Ticker', key: 'ticker' },
+        { label: 'Quantity', key: 'quantity' },
+        { label: 'Sell Price', key: 'sellPrice' },
+        { label: 'Net Proceeds', key: 'netSellProceeds' },
+        { label: 'Cost Basis', key: 'costBasis' },
+        { label: 'Realized P/L', key: 'realizedGain' }
+      ];
 
   return (
     <div className="space-y-6">
@@ -83,8 +113,8 @@ const AccountingView: React.FC<AccountingViewProps> = ({ realizedGains, displayC
         
         {/* Mobile Card View */}
         <div className="space-y-4 md:hidden">
-            {sortedGains.length > 0 ? (
-                sortedGains.map(g => <RealizedGainCard key={g.id} gain={g} displayCurrency={displayCurrency} />)
+            {currentData.length > 0 ? (
+                currentData.map(g => <RealizedGainCard key={g.id} gain={g} displayCurrency={displayCurrency} />)
             ) : (
                 <p className="text-center py-10 text-gray-500 dark:text-gray-400">No sell transactions recorded yet.</p>
             )}
@@ -96,11 +126,16 @@ const AccountingView: React.FC<AccountingViewProps> = ({ realizedGains, displayC
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
                 {headers.map(h => 
-                  <th key={h} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{h}</th>)}
+                  <th key={h.key} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                     <button onClick={() => requestSort(h.key)} className="w-full text-left font-medium uppercase tracking-wider focus:outline-none hover:text-gray-700 dark:hover:text-gray-100">
+                          {h.label}{getSortIndicator(h.key)}
+                      </button>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {sortedGains.length > 0 ? sortedGains.map(g => {
+              {currentData.length > 0 ? currentData.map(g => {
                 const realizedGainValue = isUsd ? g.realizedGainUsd : g.realizedGain;
                 const gainColor = realizedGainValue === undefined ? 'text-gray-500 dark:text-gray-300'
                                   : realizedGainValue >= 0 ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400';
@@ -139,6 +174,19 @@ const AccountingView: React.FC<AccountingViewProps> = ({ realizedGains, displayC
             </tbody>
           </table>
         </div>
+        
+        {realizedGains.length > 0 && (
+            <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                itemsPerPage={itemsPerPage}
+                setItemsPerPage={setItemsPerPage}
+                canNextPage={canNextPage}
+                canPrevPage={canPrevPage}
+                nextPage={nextPage}
+                prevPage={prevPage}
+            />
+        )}
       </Card>
     </div>
   );

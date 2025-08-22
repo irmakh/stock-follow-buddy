@@ -63,8 +63,9 @@ const PriceHistoryLineChart: React.FC<PriceHistoryLineChartProps> = ({ stockPric
           <XAxis dataKey="date" stroke={tickColor} tick={{ fontSize: 12 }} minTickGap={20}/>
           <YAxis
               stroke={tickColor}
-              tickFormatter={(value) => new Intl.NumberFormat('tr-TR', { notation: 'compact', compactDisplay: 'short' }).format(value as number)}
-              domain={['auto', 'auto']}
+              tickFormatter={(value) => (value as number).toFixed(2)}
+              domain={[dataMin => (dataMin * 0.995), dataMax => (dataMax * 1.005)]}
+              allowDataOverflow={true}
               width={80}
           />
           <Tooltip content={<CustomTooltip theme={theme} />}/>

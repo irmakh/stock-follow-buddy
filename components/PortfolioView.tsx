@@ -1,8 +1,11 @@
-import React from 'react';
-import type { Portfolio, Transaction, StockPrices, StockHolding } from '../types';
+import React, { useMemo } from 'react';
+import type { Portfolio, Transaction, StockPrices, StockHolding, PriceHistoryItem } from '../types';
 import { TransactionType } from '../types';
 import Card from './ui/Card';
 import { formatCurrency, formatPercentage } from '../utils/formatter';
+import { usePagination } from '../hooks/usePagination';
+import PaginationControls from './ui/PaginationControls';
+import { useSort } from '../hooks/useSort';
 
 type DisplayCurrency = 'TRY' | 'USD';
 
@@ -103,71 +106,144 @@ const HoldingsTable: React.FC<{ holdings: Portfolio['holdings'], displayCurrency
   );
 };
 
+type AugmentedTransaction = Transaction & { commission: number; netValue: number; };
+
 const TransactionsTable: React.FC<{ transactions: Transaction[] }> = ({ transactions }) => {
-    const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    const headers = ['Date', 'Ticker', 'Type', 'Quantity', 'Price (TRY)', 'Commission (TRY)', 'Net Value (TRY)', 'USD/TRY Rate'];
+    const augmentedTransactions = useMemo(() => {
+        return transactions.map(t => {
+            const grossValue = t.price * t.quantity;
+            const commission = t.type === TransactionType.Sell ? grossValue * (t.commissionRate ?? 0) : 0;
+            const netValue = t.type === TransactionType.Buy ? grossValue : grossValue - commission;
+            return { ...t, commission, netValue };
+        });
+    }, [transactions]);
+
+    const { sortedItems, requestSort, getSortIndicator } = useSort<AugmentedTransaction>(augmentedTransactions, { key: 'date', direction: 'descending' });
+    
+    const {
+        currentData,
+        currentPage,
+        totalPages,
+        itemsPerPage,
+        setItemsPerPage,
+        nextPage,
+        prevPage,
+        canNextPage,
+        canPrevPage
+    } = usePagination(sortedItems, 10);
+    
+    const headers: { label: string; key: keyof AugmentedTransaction }[] = [
+        { label: 'Date', key: 'date' },
+        { label: 'Ticker', key: 'ticker' },
+        { label: 'Type', key: 'type' },
+        { label: 'Quantity', key: 'quantity' },
+        { label: 'Price (TRY)', key: 'price' },
+        { label: 'Commission (TRY)', key: 'commission' },
+        { label: 'Net Value (TRY)', key: 'netValue' },
+        { label: 'USD/TRY Rate', key: 'usdTryRate' },
+    ];
+
     return (
         <Card>
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Transaction History</h3>
-            <div className="overflow-x-auto max-h-96">
+            <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
                         <tr>
                             {headers.map(h => 
-                                <th key={h} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{h}</th>)}
+                                <th key={h.key} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    <button onClick={() => requestSort(h.key)} className="w-full text-left font-medium uppercase tracking-wider focus:outline-none hover:text-gray-700 dark:hover:text-gray-100">
+                                        {h.label}{getSortIndicator(h.key)}
+                                    </button>
+                                </th>
+                            )}
                         </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                        {sortedTransactions.length === 0 ? (
+                        {currentData.length === 0 ? (
                             <tr>
                                 <td colSpan={headers.length} className="text-center py-10 text-gray-500 dark:text-gray-400">No transactions recorded yet.</td>
                             </tr>
-                        ) : sortedTransactions.map(t => {
-                            const grossValue = t.price * t.quantity;
-                            const commission = t.type === TransactionType.Sell ? grossValue * (t.commissionRate ?? 0) : 0;
-                            const netValue = t.type === TransactionType.Buy ? grossValue : grossValue - commission;
-                            return (
-                                <tr key={t.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.date}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{t.ticker}</td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${t.type === TransactionType.Buy ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>{t.type}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.quantity}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatCurrency(t.price, 'auto', 'TRY')}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatCurrency(commission, 'auto', 'TRY')}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatCurrency(netValue, 'auto', 'TRY')}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.usdTryRate ? t.usdTryRate.toFixed(4) : 'N/A'}</td>
-                                </tr>
-                            );
-                        })}
+                        ) : currentData.map(t => (
+                            <tr key={t.id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.date}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{t.ticker}</td>
+                                <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${t.type === TransactionType.Buy ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>{t.type}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.quantity}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatCurrency(t.price, 'auto', 'TRY')}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatCurrency(t.commission, 'auto', 'TRY')}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatCurrency(t.netValue, 'auto', 'TRY')}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{t.usdTryRate ? t.usdTryRate.toFixed(4) : 'N/A'}</td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
+            {transactions.length > 0 && (
+                <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    itemsPerPage={itemsPerPage}
+                    setItemsPerPage={setItemsPerPage}
+                    canNextPage={canNextPage}
+                    canPrevPage={canPrevPage}
+                    nextPage={nextPage}
+                    prevPage={prevPage}
+                />
+            )}
         </Card>
     );
 };
 
+type PriceHistoryRow = PriceHistoryItem & { ticker: string };
+
 const PriceHistoryTable: React.FC<{ prices: StockPrices }> = ({ prices }) => {
-    const allPrices = Object.entries(prices).flatMap(([ticker, history]) => 
+    const allPrices = useMemo(() => Object.entries(prices).flatMap(([ticker, history]) => 
         history.map(p => ({ ...p, ticker }))
-    ).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    ), [prices]);
+    
+    const { sortedItems, requestSort, getSortIndicator } = useSort<PriceHistoryRow>(allPrices, { key: 'date', direction: 'descending' });
+
+    const {
+        currentData,
+        currentPage,
+        totalPages,
+        itemsPerPage,
+        setItemsPerPage,
+        nextPage,
+        prevPage,
+        canNextPage,
+        canPrevPage
+    } = usePagination(sortedItems, 10);
+    
+    const headers: { label: string, key: keyof PriceHistoryRow }[] = [
+        { label: 'Date', key: 'date' },
+        { label: 'Ticker', key: 'ticker' },
+        { label: 'Price', key: 'price' }
+    ];
 
     return (
         <Card>
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Stock Price History (TRY)</h3>
-            <div className="overflow-x-auto max-h-96">
+            <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
                         <tr>
-                            {['Date', 'Ticker', 'Price'].map(h => 
-                                <th key={h} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{h}</th>)}
+                            {headers.map(h => 
+                                <th key={h.key} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    <button onClick={() => requestSort(h.key)} className="w-full text-left font-medium uppercase tracking-wider focus:outline-none hover:text-gray-700 dark:hover:text-gray-100">
+                                        {h.label}{getSortIndicator(h.key)}
+                                    </button>
+                                </th>
+                            )}
                         </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                        {allPrices.length === 0 ? (
+                        {currentData.length === 0 ? (
                             <tr>
                                 <td colSpan={3} className="text-center py-10 text-gray-500 dark:text-gray-400">No price history recorded yet.</td>
                             </tr>
-                        ) : allPrices.map((p, index) => (
+                        ) : currentData.map((p, index) => (
                             <tr key={`${p.ticker}-${p.date}-${index}`}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{p.date}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{p.ticker}</td>
@@ -177,6 +253,18 @@ const PriceHistoryTable: React.FC<{ prices: StockPrices }> = ({ prices }) => {
                     </tbody>
                 </table>
             </div>
+            {allPrices.length > 0 && (
+                <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    itemsPerPage={itemsPerPage}
+                    setItemsPerPage={setItemsPerPage}
+                    canNextPage={canNextPage}
+                    canPrevPage={canPrevPage}
+                    nextPage={nextPage}
+                    prevPage={prevPage}
+                />
+            )}
         </Card>
     )
 }
